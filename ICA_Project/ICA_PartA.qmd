@@ -1,0 +1,222 @@
+---
+title: "ICAPartA"
+format: html
+editor: visual
+---
+
+# Introduction 
+
+#### Writing and executing complex SQL queries to retrieve and manipulate data from a data base in Three parts, A, B and D. This was done by performing multiply task such as applying SQL concepts in a database context, analyzing and interpreting data. 
+
+```{r}
+
+#Install Packages for Project
+
+install.packages("DBI")
+install.packages("dplyr")
+install.packages("tidyverse")
+install.packages("ggplot2")
+install.packages("corrplot")
+
+
+library(DBI)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(corrplot)
+
+
+
+
+```
+
+```{r}
+# Import and connect to SQLite DB file 
+
+conn <- dbConnect(RSQLite::SQLite(), "ICA_2023.sqlite")
+```
+
+```{r}
+
+
+#Add tables from SQLite DB/ Load the tables into R 
+
+projects <- dbGetQuery(conn, "SELECT"* FROM Projects)
+
+assets <- dbGetQuery(conn, "SELECT"* FROM Assets)
+
+developers <- dbGetQuery(conn, "SELECT" * FROM Developers)
+
+projectDevelopers <- dbGetQuery(conn, "SELECT" *FROM ProjectDevelopers)
+
+timelines <-dbQuery(conn, "SELECT"* FROM Timelines)
+
+customers <- dbGetQuery(conn,"SELECT"* FROM Customers)
+
+AssetID <- dbGetQuery(conn, "SELECT"* FROM AssetsDevelopers
+
+
+```
+
+# Part A : 
+
+### First, I was required to list the total budge allocated for projects in each country, along with the count of projects per country. 
+
+```{r}
+# List the total budget allocated for projects in each country 
+
+budget_per_country <- dbGetQuery(conn,"SELECT * ProjectID, Budget, CustomerCountry FROM Projects, Customers"),
+
+
+# list the count of projects per country 
+
+projects_per_Country  <- dbGetQuery(conn," SELECT CustomerCountry AssetID, COUNT as count FROM Assets,Projects,Customers"),
+```
+
+# Results
+
+Above shows the total budget for projects in each country "Spain = 650000, Uk = 550000, Netherlands = 400000, Italy = 250000, France = 200000, Germany = 15000, and NA = 0 where missing data could be in the database.
+
+Projects per Country came in at 1 project per Country with two in Spain and two for the UK and a NA for 34.
+
+### Part2: Display sorted by the total budget in descending order.
+
+```{r}
+#create a plot for the  budget for each country in descending order.
+
+budget_per_country <- df%>%
+  
+group_by (customers_country) %>%
+  
+summarise(totaly_budget =sum(budget, na.rm =TRUE))%>%
+
+arrange(desc(total_budget)),
+
+```
+
+```{r}
+ggplot(budget_per_country), aes (x =reorder (customers_country, -total_budget), y = total_budget, fill = customer_country) + geom_bar (stat = "identity") + labs(x ="country" , y= "Total_Budet", title = "Total_Budget_by_Country"),
+```
+
+Above shows the results of the total budget for each country in descending order by a ggplot table From Spain to NA. Spain comes first with a budget of 65000 to NA that results as 0.
+
+# Part A_2.
+
+List the average development time for projects, Below shows the data I took from the table, and wrote out to create a database, to get the average development time for projects.
+
+```{r}
+#list the average development time for projects. 
+
+#first create data frame with information I need from the SQLite database. 
+
+df<- data.frame( 
+  
+  projectID = c (101, 102, 103, 104, 105, 106, 207, 108), 
+  
+  project_name= c("Galaxy Quest", "Mystic Realms","Shadow Legacy", "Urban Adventure", "Ocean Odyssey", "Desert Surival", "Frozen Frontier", "Cybernetic Deams"),
+  
+  start_time = c("01/01/2021", "01/10/2021", "01/01/022","01/10/2022", "01/03/2023","01/07/2024","01/01/2025", "01/07/202"), 
+  
+  end_time = c ("30/09)2021", "31/12/2/12", "30/09/2022", "2023/02/31", "30/6/2023","30/06/2025", "31/12/2025"),
+  
+),
+
+```
+
+```{r}
+#creating objects (start to end time)
+
+projects_df$dev_time_days<- as.Date(projects_df$start_time, format = "%d/%m/%y"),
+
+projects_df$end_time <- as.Date(projects_df$end_time, format ="%d/%m/%y") ,
+```
+
+#### I converted the date time to objects, to get the correct days between each time for projects.
+
+```{r}
+#Average time for each project development 
+
+projects_f$ev_time_days <-as.numeric(projects_df$end_time -projectsdf$start_time),
+
+average_dev_time <- aggregate(dev_time_days ~projectsID +project_name, data =projects_df, FUN =mean) ,
+
+```
+
+```{r}
+#Display results in a table and graph 
+
+print(average_dev_time ),
+
+```
+
+## Below Part B - Linear Regression
+
+#### Part One Model: Perform linear regression to predict the success rate of a project based on its budget and team size and present the data in an appropriate plot.
+
+```{r}
+
+# Creating a data frame to find the success rate for each project. 
+
+ project_data <- data.frame(
+   
+   ProjectName = c ("Galaxy Quest", "Mystic Realms","Shadow Legacy", "Urban Adventure", "Ocean Odyssey", "Desert Surival", "Frozen Frontier", "Cybernetic Deams"),
+   
+   Budget = c(100000, 200000, 150000, 25000, 300000, 350000, 400000, 4500000 ), 
+   
+   TeamSize = c (6, 8, 6, 7, 0, 0, 0), 
+   
+   Status = c ("Completed", "Completed", "Completed", "Completed", "In Porgress", "Planned","Planned", "Planned"),
+   
+ ),
+
+ # Creating Success rates (I Put Status of Completed projects to be represented as  100 and in Progress and Planned as being 0. ) 
+
+project_data$SuccessRate <- ifelse (project_data$Status == "Completed", 100, 0),
+
+```
+
+```{r}
+#creating a table to show the success rate in a table 
+
+project_data_table <- project_data [, c("ProjectName", "Budget", "TeamSize", "SuccessRate")],
+
+print(project_data_table),
+
+```
+
+```{r}
+
+# creating a plot to predict the success rate of a project based on its budget and team size. 
+
+ggplot(project_data, aes(x =Budget, y = TeamSize)) + geom_point (aes(color =as.factor (successRate))) = theme_minimal(),
+
+```
+
+#### Part B - Linear Regression: Interpret: Interpret the model coefficients and discuss what insights they provide about game development.)
+
+```{r}
+#Creating a correlation table based on Team Size, Success Rate and Budget. 
+
+correlation_table <- cor(project_data[, c ("Budget", "TeamSize", "SuccessRate")]),
+
+#Show Correlation table
+
+print(correlation_table)
+
+```
+
+# Conclusion:
+
+Above shows a correlation table between budget and team size of Projects. From this table and the Model (scatter plot) above it provides me with the interpretations:
+
+That the table shows that along the diagonal of the table all cells are equal to 1, showing that each one is correlated with its-self.
+
+2 Correlation between "Budget" and "Team size" is -0.82 indicating that there is a weak negative correlated.
+
+Overall my conclusion is that a bigger Budget is not associated with a more successful project. These Insights provides that more developers are need to complete projects.
+
+## How skills and knowledge gained how they can be apply to game development and computer animation.
+
+With data management, SQL gave me an insight on how basic data management within R can be used for computer animation, Visual data analysis, can play a huge role in helping understand patterns and trends within he gaming and animation more effectively, by using Shiny and ggplots to create itnerative web graphics that could help provide live data feeds, this would help game developers and animators to see what works best for customers in relation to game styles, or animations, whats trending where and when. I found learning about and working out correlation table to be a great benefit as it gave me the knowledge on how to identify patterns and how different variables can effect another.
+
+## 
